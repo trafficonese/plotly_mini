@@ -149,40 +149,5 @@ hide_legend <- function(p) {
   p
 }
 
-#' Convert trace types to WebGL
-#' 
-#' @param p a plotly or ggplot object.
-#' @export
-#' @examples 
-#' 
-#' # currently no bargl trace type
-#' toWebGL(ggplot() + geom_bar(aes(1:10)))
-#' toWebGL(qplot(1:10, 1:10))
-#' 
-toWebGL <- function(p) {
-  if (ggplot2::is.ggplot(p)) {
-    p <- plotly_build(p)
-  }
-  p$x$.plotlyWebGl <- TRUE
-  p
-}
-
-
-#' Create a complete empty plotly graph.
-#' 
-#' Useful when used with [subplot()]
-#' 
-#' @param ... arguments passed onto [plot_ly()]
-#' 
-#' @export
-plotly_empty <- function(...) {
-  eaxis <- list(
-    showticklabels = FALSE,
-    showgrid = FALSE,
-    zeroline = FALSE
-  )
-  layout(plot_ly(...), xaxis = eaxis, yaxis = eaxis)
-}
-
 
 
