@@ -17,13 +17,6 @@ HTMLWidgets.widget({
   
   renderValue: function(el, x, instance) {
     
-    /* 
-    / 'inform the world' about highlighting options this is so other
-    / crosstalk libraries have a chance to respond to special settings 
-    / such as persistent selection. 
-    / AFAIK, leaflet is the only library with such intergration
-    / https://github.com/rstudio/leaflet/pull/346/files#diff-ad0c2d51ce5fdf8c90c7395b102f4265R154
-    */
     var ctConfig = crosstalk.var('plotlyCrosstalkOpts').set(x.highlight);
       
     if (typeof(window) !== "undefined") {
@@ -314,17 +307,7 @@ HTMLWidgets.widget({
     
     // send user input event data to shiny
     if (HTMLWidgets.shinyMode) {
-      $('#next1').on('click', function(d) {
-        Shiny.setInputValue(".clientValue-plotly_click-" + x.source, null);
-          //console.log("next1 clicked. Print d");
-          //console.log(d);
-      });
-      $('#prev1').on('click', function(d) {
-        Shiny.setInputValue(
-          ".clientValue-plotly_click-" + x.source, "[{\"curveNumber\":0,\"pointNumber\":48,\"x\":\"2018-05-27 02:00\",\"y\":418.55456342455,\"key\":\"57\"}]");
-      });
-      
-      
+
       // https://plot.ly/javascript/zoom-events/
       graphDiv.on('plotly_relayout', function(d) {
         Shiny.setInputValue(
@@ -340,11 +323,7 @@ HTMLWidgets.widget({
       });
       graphDiv.on('plotly_click', function(d) {
         //graphDiv.emit("plotly_doubleclick");
-        
-      	Shiny.setInputValue(
-          ".clientValue-plotly_click-" + x.source,
-          JSON.stringify(eventDataWithKey(d))
-        );
+
         
         
         if (d.event.altKey) {
@@ -367,27 +346,40 @@ HTMLWidgets.widget({
             console.log(pts);
             
             var d = {points: pts, event: d.event};
+            
+            Shiny.setInputValue(
+              ".clientValue-plotly_alt_click-" + x.source,
+              JSON.stringify(eventDataWithKeyALT(d))
+            );
+            
           }
           graphDiv._shiny_plotly_click = d;
+          
         } else if (x.highlight.persistentShift) {
+          
       	// Shift Click
           var dShift = graphDiv._shiny_plotly_click || {points: []};
           var pts = [].concat(dShift.points, d.points);
           var d = {points: pts, event: d.event};
+          Shiny.setInputValue(
+            ".clientValue-plotly_click_persist_on_shift-" + x.source,
+            JSON.stringify(eventDataWithKey(d))
+          );
           graphDiv._shiny_plotly_click = d;
+          
         } else {
-          graphDiv._shiny_plotly_click = undefined;
+        	Shiny.setInputValue(
+            ".clientValue-plotly_click-" + x.source,
+            JSON.stringify(eventDataWithKey(d))
+          );
+          graphDiv._shiny_plotly_click = d;
         }
         
-        Shiny.setInputValue(
-          ".clientValue-plotly_alt_click-" + x.source,
-          JSON.stringify(eventDataWithKeyALT(d))
-        );
-        Shiny.setInputValue(
-          ".clientValue-plotly_click_persist_on_shift-" + x.source,
-          JSON.stringify(eventDataWithKey(d))
-        );
+        //graphDiv._shiny_plotly_click = undefined;
+        
       });
+      
+      
       graphDiv.on('plotly_restyle', function(d) {
         Shiny.onInputChange(
           ".clientValue-plotly_restyle-" + x.source, 
@@ -444,6 +436,7 @@ HTMLWidgets.widget({
         );
       });
       graphDiv.on('plotly_doubleclick', function(eventData) {
+        graphDiv._shiny_plotly_click = undefined;
         Shiny.setInputValue(".clientValue-plotly_selected-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_selecting-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_brush-" + x.source, null);
@@ -454,6 +447,7 @@ HTMLWidgets.widget({
       });
       // 'plotly_deselect' is code for doubleclick when in select mode
       graphDiv.on('plotly_deselect', function(eventData) {
+        graphDiv._shiny_plotly_click = undefined;
         Shiny.setInputValue(".clientValue-plotly_selected-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_selecting-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_brush-" + x.source, null);
