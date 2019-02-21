@@ -72,6 +72,65 @@ ggplotly <- function(p = ggplot2::last_plot(), width = NULL, height = NULL,
   UseMethod("ggplotly", p)
 }
 
+
+get_domains <- function(nplots = 1, nrows = 1, margins = 0.01, 
+                        widths = NULL, heights = NULL) {
+  if (length(margins) == 1) margins <- rep(margins, 4)
+  if (length(margins) != 4) stop("margins must be length 1 or 4", call. = FALSE)
+  ncols <- ceiling(nplots / nrows)
+  widths <- widths %||% rep(1 / ncols, ncols)
+  heights <- heights %||% rep(1 / nrows, nrows)
+  if (length(widths) != ncols) {
+    stop("The length of the widths argument must be equal ",
+         "to the number of columns", call. = FALSE)
+  }
+  if (length(heights) != nrows) {
+    stop("The length of the heights argument is ", length(heights),
+         ", but the number of rows is ", nrows, call. = FALSE)
+  }
+  if (any(widths < 0) | any(heights < 0)) {
+    stop("The widths and heights arguments must contain positive values")
+  }
+  if (sum(widths) > 1 | sum(heights) > 1) {
+    stop("The sum of the widths and heights arguments must be less than 1")
+  }
+  
+  widths <- cumsum(c(0, widths))
+  heights <- cumsum(c(0, heights))
+  # 'center' these values if there is still room left 
+  widths <- widths + (1 - max(widths)) / 2
+  heights <- heights + (1 - max(heights)) / 2
+  
+  xs <- vector("list", ncols)
+  for (i in seq_len(ncols)) {
+    xs[[i]] <- c(
+      xstart = widths[i] + if (i == 1) 0 else margins[1],
+      xend = widths[i + 1] - if (i == ncols) 0 else margins[2]
+    )
+  }
+  xz <- rep_len(xs, nplots)
+  
+  ys <- vector("list", nrows)
+  for (i in seq_len(nplots)) {
+    j <- ceiling(i / ncols)
+    ys[[i]] <- c(
+      ystart = 1 - (heights[j]) - if (j == 1) 0 else margins[3],
+      yend = 1 - (heights[j + 1]) + if (j == nrows) 0 else margins[4]
+    )
+  }
+  list2df(Map(c, xz, ys))
+}
+
+
+list2df <- function(x, nms) {
+  #stopifnot(length(unique(sapply(x, length))) == 1)
+  m <- if (length(x) == 1) t(x[[1]]) else Reduce(rbind, x)
+  row.names(m) <- NULL
+  df <- data.frame(m)
+  if (!missing(nms)) setNames(df, nms) else df
+}
+
+
 #' @export
 ggplotly.NULL <- function(...) {
   # print("ggplotly.R  - ggplotly.NULL")

@@ -20,6 +20,20 @@ plotly_build <- function(p, registerFrames = TRUE) {
   UseMethod("plotly_build")
 }
 
+tryFALSE <- function(expr) {
+  tryCatch(expr, error = function(e) FALSE)
+}
+colorway_retrain <- function(traces, colorway = colorway()) {
+  colorway <- rep(colorway, length.out = length(traces))
+  for (i in seq_along(traces)) {
+    col <- prefix_class(default(colorway[[i]]), "colorway")
+    traces[[i]] <- rapply(traces[[i]], function(x) { if (inherits(x, "colorway")) alpha_inherit(col, x) else x }, how = "replace")
+  }
+  traces 
+}
+
+
+
 #' @export
 plotly_build.NULL <- function(...) {
   htmltools::browsable(htmltools::div(...))
@@ -367,15 +381,8 @@ plotly_build.plotly <- function(p, registerFrames = TRUE) {
   # box up 'data_array' attributes where appropriate
   p <- verify_attr_spec(p)
   
-  # make sure we're including mathjax (if TeX() is used)
-  p <- verify_mathjax(p)
-  
   # if a partial bundle was specified, make sure it supports the visualization
   p <- verify_partial_bundle(p)
-  
-  # scattergl currently doesn't render in RStudio on Windows
-  # https://github.com/ropensci/plotly/issues/1214
-  p <- verify_scattergl_platform(p)
   
   # make sure plots don't get sent out of the network (for enterprise)
   p$x$base_url <- get_domain()

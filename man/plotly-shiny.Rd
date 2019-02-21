@@ -6,8 +6,7 @@
 \alias{renderPlotly}
 \title{Shiny bindings for plotly}
 \usage{
-plotlyOutput(outputId, width = "100\%", height = "400px",
-  inline = FALSE)
+plotlyOutput(outputId, width = "100\%", height = "400px", inline = FALSE)
 
 renderPlotly(expr, env = parent.frame(), quoted = FALSE)
 }

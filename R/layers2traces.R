@@ -173,35 +173,6 @@ to_basic.GeomCol <- function(data, prestats_data, layout, params, p, ...) {
 }
 
 #' @export
-to_basic.GeomViolin <- function(data, prestats_data, layout, params, p, ...) {
-  n <- nrow(data)
-  revData <- data[order(data[["y"]], decreasing = TRUE), ]
-  idx <- !names(data) %in% c("x", "xmin", "xmax")
-  data <- rbind(
-    cbind(x = data[["x"]] - data$violinwidth / 2, data[, idx]),
-    cbind(x = revData[["x"]] + revData$violinwidth / 2, revData[, idx])
-  )
-  if (!is.null(data$hovertext)) data$hovertext <- paste0(data$hovertext, br())
-  data$hovertext <- paste0(
-    data$hovertext, "density: ", format(data$density, justify = "none")
-  )
-  prefix_class(data, c("GeomPolygon", "GeomViolin"))
-}
-
-#' @export
-to_basic.GeomBoxplot <- function(data, prestats_data, layout, params, p, ...) {
-  aez <- names(GeomBoxplot$default_aes)
-  for (i in aez) {
-    prestats_data[[i]] <- NULL
-  }
-  vars <- c("PANEL", "group", "key", aez, grep("_plotlyDomain$", names(data), value = T))
-  prefix_class(
-    merge(prestats_data, data[names(data) %in% vars], by = c("PANEL", "group"), sort = FALSE),
-    "GeomBoxplot"
-  )
-}
-
-#' @export
 to_basic.GeomSmooth <- function(data, prestats_data, layout, params, p, ...) {
   if (nrow(data) == 0) {
     return(prefix_class(data, "GeomBlank"))
@@ -254,91 +225,6 @@ to_basic.GeomSegment <- function(data, prestats_data, layout, params, p, ...) {
           cbind(x = xend, y = yend, others))
   })
   prefix_class(data, "GeomPath")
-}
-
-#' @export
-to_basic.GeomRect <- function(data, prestats_data, layout, params, p, ...) {
-  data$group <- seq_len(nrow(data))
-  others <- data[!names(data) %in% c("xmin", "ymin", "xmax", "ymax", "y", "x")]
-  dat <- with(data, {
-    rbind(cbind(x = xmin, y = ymin, others),
-          cbind(x = xmin, y = ymax, others),
-          cbind(x = xmax, y = ymax, others),
-          cbind(x = xmax, y = ymin, others))
-  })
-  prefix_class(dat, c("GeomPolygon", "GeomRect"))
-}
-
-#' @export
-to_basic.GeomSf <- function(data, prestats_data, layout, params, p, ...) {
-  
-  data[["geometry"]] <- sf::st_sfc(data[["geometry"]])
-  data <- sf::st_as_sf(data, sf_column_name = "geometry")
-  geom_type <- sf::st_geometry_type(data)
-  # st_cast should "expand" a collection into multiple rows (one per feature)
-  if ("GEOMETRYCOLLECTION" %in% geom_type) {
-    data <- sf::st_cast(data)
-    geom_type <- sf::st_geometry_type(data)
-  }
-  data <- remove_class(data, "sf")
-  
-  basic_type <- dplyr::recode(
-    as.character(geom_type),
-    TRIANGLE = "GeomPolygon",
-    TIN = "GeomPolygon",
-    POLYHEDRALSURFACE = "GeomPolygon",
-    SURFACE = "GeomPolygon",
-    CURVE = "GeomPath",
-    MULTISURFACE = "GeomPolygon",
-    MULTICURVE = "GeomPath",
-    CURVEPOLYGON = "GeomPolygon",
-    COMPOUNDCURVE = "GeomPath",
-    CIRCULARSTRING = "GeomPath",
-    MULTIPOLYGON = "GeomPolygon",
-    MULTILINESTRING = "GeomPath",
-    MULTIPOINT = "GeomPoint",
-    POLYGON = "GeomPolygon",
-    LINESTRING = "GeomPath",
-    POINT = "GeomPoint"
-  )
-  
-  # return a list of data frames...one for every geometry (a la, GeomSmooth)
-  d <- split(data, basic_type)
-  for (i in seq_along(d)) {
-    d[[i]] <- prefix_class(
-      fortify_sf(d[[i]]), c(names(d)[[i]], "GeomSf")
-    )
-  }
-  if (length(d) == 1) d[[1]] else d
-}
-
-#' @export
-to_basic.GeomMap <- function(data, prestats_data, layout, params, p, ...) {
-  common <- intersect(data$map_id, params$map$id)
-  data <- data[data$map_id %in% common, , drop = FALSE]
-  map <- params$map[params$map$id %in% common, , drop = FALSE]
-  # TODO: do we need coord_munch() as in GeomMap$draw_panel()
-  data$id <- data$map_id
-  data$map_id <- NULL
-  data$group <- NULL
-  data <- merge(data, map, by = "id", sort = FALSE)
-  data$group <- interaction(data[names(data) %in% c("PANEL", "group", "id")])
-  prefix_class(data, c("GeomPolygon", "GeomMap"))
-}
-
-#' @export
-to_basic.GeomAnnotationMap <- function(data, prestats_data, layout, params, p, ...) {
-  # TODO: we could/should? reduce this data down to the panel limits, but 
-  # probably more effort than it's worth
-  d <- params$map
-  
-  # add hovertext
-  hasRegion <- isTRUE(p$tooltip %in% c("all", "region"))
-  hasSubRegion <- isTRUE(p$tooltip %in% c("all", "subregion"))
-  d$hovertext <- d$hovertext %||% paste0(
-    if (hasRegion) d$region, if (hasSubRegion) paste0(br(), d$subregion)
-  )
-  prefix_class(d, c("GeomPolygon", "GeomAnnotationMap"))
 }
 
 #' @export
@@ -438,27 +324,6 @@ to_basic.GeomVline <- function(data, prestats_data, layout, params, p, ...) {
 #' @export
 to_basic.GeomJitter <- function(data, prestats_data, layout, params, p, ...) {
   prefix_class(data, "GeomPoint")
-}
-
-
-#' @export
-to_basic.GeomErrorbar <- function(data, prestats_data, layout, params, p, ...) {
-  # width for ggplot2 means size of the entire bar, on the data scale
-  # (plotly.js wants half, in pixels)
-  data <- merge(data, layout$layout, by = "PANEL", sort = FALSE)
-  data$width <- (data[["xmax"]] - data[["x"]]) /(data[["x_max"]] - data[["x_min"]])
-  data$fill <- NULL
-  prefix_class(data, "GeomErrorbar")
-}
-
-#' @export
-to_basic.GeomErrorbarh <- function(data, prestats_data, layout, params, p, ...) {
-  # height for ggplot2 means size of the entire bar, on the data scale
-  # (plotly.js wants half, in pixels)
-  data <- merge(data, layout$layout, by = "PANEL", sort = FALSE)
-  data$width <- (data[["ymax"]] - data[["y"]]) / (data[["y_max"]] - data[["y_min"]])
-  data$fill <- NULL
-  prefix_class(data, "GeomErrorbarh")
 }
 
 #' @export

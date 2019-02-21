@@ -83,21 +83,8 @@ highlight <- function(p, on = "plotly_click", off,
                       dynamic = FALSE, color = NULL,
                       selectize = FALSE, defaultValues = NULL,
                       opacityDim = getOption("opacityDim", 0.2), 
-                      selected = attrs_selected(), debounce = 0,
-                      ...) {
-  
-  # currently ... is not-supported and will catch 
-  # some arguments we supported at one point 
-  dots <- list(...)
-  if (length(dots)) {
-    warning(
-      "The following arguments are not supported:\n",
-      toString(names(dots)), "\n",
-      "Arguments such as: hoverinfo and showInLegend \n",
-      "have been replaced by selected and other",
-      call. = FALSE
-    )
-  }
+                      selected = attrs_selected(), debounce = 0) {
+
   
   if (opacityDim < 0 || 1 < opacityDim) {
     stop("opacityDim must be between 0 and 1", call. = FALSE)
@@ -113,17 +100,7 @@ highlight <- function(p, on = "plotly_click", off,
     )
     color <- color[1] 
   }
-  
-  # attach HTML dependencies (these libraries are used in the HTMLwidgets.renderValue() method)
-  # TODO: only attach these when keys are present!
-  if (selectize) {
-    p$dependencies <- c(p$dependencies, list(selectizeLib()))
-  }
-  if (dynamic) {
-    p$dependencies <- c(p$dependencies, list(colourPickerLib()))
-  }
-  
-  
+
   # TODO: expose unhover?
   off_options <- paste0(
     "plotly_", c("doubleclick", "deselect", "relayout")
@@ -137,15 +114,7 @@ highlight <- function(p, on = "plotly_click", off,
     )
     off <- default(off_default %||% "plotly_relayout")
   }
-  
-  if (isTRUE(persistent)) {
-    message(
-      "We recommend setting `persistent` to `FALSE` (the default) because ",
-      "persistent selection mode can now be used by holding the shift key ",
-      "(while triggering the `on` event)."
-    )
-  }
-  
+
   # main (non-plotly.js) spec passed along to HTMLwidgets.renderValue()
   p$x$highlight <- list(
     # NULL may be used to disable on/off events
@@ -202,22 +171,6 @@ highlight_defaults <- function() {
   args <- formals(highlight)[-1]
   # have to evaluate args now that some of them are functions...
   compact(lapply(args, function(x) tryNULL(eval(x))))
-}
-
-selectizeLib <- function(bootstrap = TRUE) {
-  htmltools::htmlDependency(
-    "selectize", "0.12.0", depPath("selectize"),
-    stylesheet = if (bootstrap) "selectize.bootstrap3.css",
-    script = "selectize.min.js"
-  )
-}
-
-colourPickerLib <- function() {
-  htmltools::htmlDependency(
-    "colourpicker", "1.1", depPath("colourpicker"),
-    stylesheet = "colourpicker.min.css",
-    script = "colourpicker.min.js"
-  )
 }
 
 depPath <- function(...) {
