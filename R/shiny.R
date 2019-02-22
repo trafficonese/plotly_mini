@@ -74,27 +74,18 @@ event_data <- function(event = c(
   "plotly_deselect", "plotly_relayout", "plotly_legendclick", 
   "plotly_legenddoubleclick", "plotly_afterplot"), 
   source = "A", session = shiny::getDefaultReactiveDomain()) {
+  
     if (is.null(session)) {
       stop("No reactive domain detected. This function can only be called \n",
            "from within a reactive shiny context.")
     }
     src <- sprintf(".clientValue-%s-%s", event[1], source)
-    # src <- sprintf(".clientValue-%s-%s", match.arg(event), source)
     
-    # cat("\n\n")
-    # print(src)
     val <- session$rootScope()$input[[src]]
-    #print(session$rootScope()$input)
-    #print(session$rootScope()$input[[src]])
     
     if (is.null(val)) {
-      # print("if")
-      # print(val)
       val
     }  else {
-      # print("else")
-      # print(val)
-      # print(jsonlite::fromJSON(val))
       jsonlite::fromJSON(val)
     } 
 }
