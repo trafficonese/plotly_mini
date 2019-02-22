@@ -33,6 +33,3 @@ m <- list(
 plot_ly(x = 1, y = 1, marker = m)
 
 }
-\seealso{
-\code{\link[=showRGB]{showRGB()}}
-}

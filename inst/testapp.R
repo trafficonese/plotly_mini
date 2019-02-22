@@ -7,7 +7,14 @@ dfN <- data.frame(
   val = runif(121, 100,1000),
   col = "green", stringsAsFactors = F
 )
+dfN[sample(1:10, size = 5, replace = F), "col"] <- "red"
+# dfN[sample(1:10, size = 5, replace = F), ]$col <- "red"
+# dfN[c(1,5,10,14,15), ]$col <- "red"
+any(duplicated(dfN$time_stamp))
 
+dfN[55, ]$col <- "orange"
+dfN[69, ]$col <- "orange"
+# dfN <- dfN[order(as.numeric(dfN$time_stamp)), ]
 
 ui <- fluidPage(
   plotlyOutput("plot"),
@@ -25,12 +32,14 @@ server <- function(input, output, session) {
   output$plot <- renderPlotly({
     key <- highlight_key(dfN)
     p <- ggplot() +
-      geom_col(data = key, aes(x = plotly:::to_milliseconds(time_stamp), y = val, fill=I(col))) +
-      theme(legend.position="none")
+      geom_col(data = key, aes(x = plotly:::to_milliseconds(time_stamp), 
+                               y = val, 
+                               fill = I(col)))
     
-    ggplotly(p, source = "Src") %>% layout(xaxis = list(tickval = NULL, ticktext = NULL, type = "date")) %>% 
-      highlight(selectize=F, off = "plotly_doubleclick", on = "plotly_click", color = "blue",
-                opacityDim = 0.5, selected = attrs_selected(opacity = 1))
+    ggplotly(p, source = "Src") %>% 
+      layout(xaxis = list(tickval = NULL, ticktext = NULL, type = "date")) %>% 
+      highlight(off = "plotly_doubleclick", on = "plotly_click", #color = "blue",
+                opacityDim = 0.3, selected = attrs_selected(opacity = 1))
   })
   
   

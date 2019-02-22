@@ -58,89 +58,7 @@ HTMLWidgets.widget({
       }
     });
       
-      // inject a "control panel" holding selectize/dynamic color widget(s)
-    if (x.selectize || x.highlight.dynamic && !instance.plotly) {
-      var flex = document.createElement("div");
-      flex.class = "plotly-crosstalk-control-panel";
-      flex.style = "display: flex; flex-wrap: wrap";
-      
-      // inject the colourpicker HTML container into the flexbox
-      if (x.highlight.dynamic) {
-        var pickerDiv = document.createElement("div");
-        
-        var pickerInput = document.createElement("input");
-        pickerInput.id = el.id + "-colourpicker";
-        pickerInput.placeholder = "asdasd";
-        
-        var pickerLabel = document.createElement("label");
-        pickerLabel.for = pickerInput.id;
-        pickerLabel.innerHTML = "Brush color&nbsp;&nbsp;";
-        
-        pickerDiv.appendChild(pickerLabel);
-        pickerDiv.appendChild(pickerInput);
-        flex.appendChild(pickerDiv);
-      }
-      
-      // inject selectize HTML containers (one for every crosstalk group)
-      if (x.selectize) {
-        var ids = Object.keys(x.selectize);
-        
-        for (var i = 0; i < ids.length; i++) {
-          var container = document.createElement("div");
-          container.id = ids[i];
-          container.style = "width: 80%; height: 10%";
-          container.class = "form-group crosstalk-input-plotly-highlight";
-          
-          var label = document.createElement("label");
-          label.for = ids[i];
-          label.innerHTML = x.selectize[ids[i]].group;
-          label.class = "control-label";
-          
-          var selectDiv = document.createElement("div");
-          var select = document.createElement("select");
-          select.multiple = true;
-          
-          selectDiv.appendChild(select);
-          container.appendChild(label);
-          container.appendChild(selectDiv);
-          flex.appendChild(container);
-        }
-      }
-      
-      // finally, insert the flexbox inside the htmlwidget container,
-      // but before the plotly graph div
-      graphDiv.parentElement.insertBefore(flex, graphDiv);
-      
-      if (x.highlight.dynamic) {
-        var picker = $("#" + pickerInput.id);
-        var colors = x.highlight.color || [];
-        // TODO: let users specify options?
-        var opts = {
-          value: colors[0],
-          showColour: "both",
-          palette: "limited",
-          allowedCols: colors.join(" "),
-          width: "20%",
-          height: "10%"
-        };
-        picker.colourpicker({changeDelay: 0});
-        picker.colourpicker("settings", opts);
-        picker.colourpicker("value", opts.value);
-        // inform crosstalk about a change in the current selection colour
-        var grps = x.highlight.ctGroups || [];
-        for (var i = 0; i < grps.length; i++) {
-          crosstalk.group(grps[i]).var('plotlySelectionColour')
-            .set(picker.colourpicker('value'));
-        }
-        picker.on("change", function() {
-          for (var i = 0; i < grps.length; i++) {
-            crosstalk.group(grps[i]).var('plotlySelectionColour')
-              .set(picker.colourpicker('value'));
-          }
-        });
-      }
-    }
-    
+
     // remove "sendDataToCloud", unless user has specified they want it
     x.config = x.config || {};
     if (!x.config.cloud) {
@@ -322,8 +240,15 @@ HTMLWidgets.widget({
         );
       });
       graphDiv.on('plotly_click', function(d) {
-        //graphDiv.emit("plotly_doubleclick");
-
+        
+        // If selected mode is not Zoom, set it. 
+        // (If in selection mode, clicks dont have SHIFT+ALT functionality)
+        var a = $(".modebar-btn.active")[0];
+        var b = a.dataset.title;
+        if (b != "Zoom") {
+          console.log("Zoom mode not selected. Change it back.");
+          $("a[data-title='Zoom']")[0].click();
+        }
         
         
         if (d.event.altKey) {
@@ -333,17 +258,16 @@ HTMLWidgets.widget({
             console.log("FROM: curveNumber " + dAlt.points[0].curveNumber +  " pointNumber " + dAlt.points[0].pointNumber);
             console.log("TO: curveNumber " + d.points[0].curveNumber +  " pointNumber " + d.points[0].pointNumber);
             
-            console.log("dAlt.points");
-            console.log(dAlt.points);
+            //console.log("dAlt.points"); console.log(dAlt.points);
+            //console.log("d.points"); console.log(d.points);
             
-            console.log("d.points");
-            console.log(d.points);
+            var limits = d.range ? d.range : d.lassoPoints;
+            console.log("limits");
             
             // How to get the points in between?
             var pts = [].concat(dAlt.points, d.points);
             
-            console.log("pts");
-            console.log(pts);
+            //console.log("pts"); console.log(pts);
             
             var d = {points: pts, event: d.event};
             
@@ -356,8 +280,7 @@ HTMLWidgets.widget({
           graphDiv._shiny_plotly_click = d;
           
         } else if (x.highlight.persistentShift) {
-          
-      	// Shift Click
+        	// Shift Click
           var dShift = graphDiv._shiny_plotly_click || {points: []};
           var pts = [].concat(dShift.points, d.points);
           var d = {points: pts, event: d.event};
@@ -376,7 +299,6 @@ HTMLWidgets.widget({
         }
         
         //graphDiv._shiny_plotly_click = undefined;
-        
       });
       
       
@@ -394,8 +316,12 @@ HTMLWidgets.widget({
         // even in the empty selection case, `d` is truthy (an object),
         // and the 'plotly_deselect' event will reset this input
         
-        //Shiny.setInputValue(".clientValue-plotly_click-" + x.source, null);
+        // This is the final result after plotly_selecting
+        // Emit doubleclick to remove clicked elements
         graphDiv.emit("plotly_doubleclick");
+        
+        // TODO - If in select mode and something is clicked, it should jump into click mode
+        // Check if only 1 element is selected and simulate a modebar-clicl?
         
         if (d) {
           Shiny.onInputChange(
@@ -410,8 +336,7 @@ HTMLWidgets.widget({
         }
       });
       graphDiv.on('plotly_selecting', function(d) {
-        //graphDiv.emit("plotly_doubleclick");
-
+        // Is triggered while selecting with lasso/Box select
         if (d) {
           Shiny.onInputChange(
             ".clientValue-plotly_selecting-" + x.source, 
@@ -448,6 +373,7 @@ HTMLWidgets.widget({
       // 'plotly_deselect' is code for doubleclick when in select mode
       graphDiv.on('plotly_deselect', function(eventData) {
         graphDiv._shiny_plotly_click = undefined;
+        graphDiv._shiny_plotly_selected = undefined;
         Shiny.setInputValue(".clientValue-plotly_selected-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_selecting-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_brush-" + x.source, null);
@@ -464,7 +390,6 @@ HTMLWidgets.widget({
       graphDiv.on('plotly_afterplot', function() {
         Shiny.setInputValue(".clientValue-plotly_afterplot-" + x.source, "afterplot", {priority: "event"});
       });
-      
     }
     
     // Given an array of {curveNumber: x, pointNumber: y} objects,
@@ -520,8 +445,8 @@ HTMLWidgets.widget({
 
     var traceManager = new TraceManager(graphDiv, x.highlight);
 
-    console.log("x");
-    console.log(x);
+    //console.log("x"); console.log(x);
+    
     // Gather all *unique* sets.
     var allSets = [];
     for (var curveIdx = 0; curveIdx < x.data.length; curveIdx++) {
@@ -680,6 +605,11 @@ HTMLWidgets.widget({
   } // end of renderValue
 }); // end of widget definition
 
+
+
+
+
+// TRACE MANAGER ####################
 /**
  * @param graphDiv The Plotly graph div
  * @param highlight An object with options for updating selection(s)
@@ -706,10 +636,6 @@ function TraceManager(graphDiv, highlight) {
   // selection parameters (e.g., transient versus persistent selection)
   this.highlight = highlight;
 }
-
-TraceManager.prototype.close = function() {
-  // TODO: Unhook all event handlers
-};
 
 TraceManager.prototype.updateFilter = function(group, keys) {
 
@@ -963,21 +889,29 @@ TraceManager.prototype.updateSelection = function(group, keys) {
   }
 };
 
-/* 
+
+
+// HELPER FUNCTIONS ####################
+/*
 Note: in all of these match functions, we assume needleSet (i.e. the selected keys)
 is a 1D (or flat) array. The real difference is the meaning of haystack.
 findMatches() does the usual thing you'd expect for 
-linked brushing on a scatterplot matrix. findSimpleMatches() returns a match iff 
+linked brushing on a scatterplot matrix. findSimpleMatches() returns a match if
 haystack is a subset of the needleSet. findNestedMatches() returns 
 */
 
 function getMatchFunc(trace) {
+  // This is called after all click events (not for selecting)
+  // It will call findMatches or findSimpleMatches. (findMatches in my case)
+  
+  //console.log("getMatchFunc");
   return (trace._isNestedKey) ? findNestedMatches : 
     (trace._isSimpleKey) ? findSimpleMatches : findMatches;
 }
 
 // find matches for "flat" keys
 function findMatches(haystack, needleSet) {
+  //console.log("findMatches");
   var matches = [];
   haystack.forEach(function(obj, i) {
     if (obj === null || needleSet.indexOf(obj) >= 0) {
@@ -989,6 +923,7 @@ function findMatches(haystack, needleSet) {
 
 // find matches for "simple" keys
 function findSimpleMatches(haystack, needleSet) {
+  console.log("findSimpleMatches");
   var match = haystack.every(function(val) {
     return val === null || needleSet.indexOf(val) >= 0;
   });
@@ -1059,13 +994,12 @@ function removeBrush(el) {
   }
 }
 
-
-// https://davidwalsh.name/javascript-debounce-function
-
-// Returns a function, that, as long as it continues to be invoked, will not
-// be triggered. The function will be called after it stops being called for
-// N milliseconds. If `immediate` is passed, trigger the function on the
-// leading edge, instead of the trailing.
+/* https://davidwalsh.name/javascript-debounce-function
+ Returns a function, that, as long as it continues to be invoked, will not
+ be triggered. The function will be called after it stops being called for
+ N milliseconds. If `immediate` is passed, trigger the function on the
+ leading edge, instead of the trailing.
+*/
 function debounce(func, wait, immediate) {
 	var timeout;
 	return function() {
