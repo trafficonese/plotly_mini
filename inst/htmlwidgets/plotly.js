@@ -247,7 +247,8 @@ HTMLWidgets.widget({
         var b = a.dataset.title;
         if (b != "Zoom") {
           console.log("Zoom mode not selected. Change it back.");
-          $("a[data-title='Zoom']")[0].click();
+          //$("a[data-title='Zoom']")[0].click();
+          Plotly.relayout(graphDiv, 'dragmode', 'zoom')
         }
         
         
@@ -261,9 +262,6 @@ HTMLWidgets.widget({
             //console.log("dAlt.points"); console.log(dAlt.points);
             //console.log("d.points"); console.log(d.points);
             
-            var limits = d.range ? d.range : d.lassoPoints;
-            console.log("limits");
-            
             // How to get the points in between?
             var pts = [].concat(dAlt.points, d.points);
             
@@ -273,7 +271,8 @@ HTMLWidgets.widget({
             
             Shiny.setInputValue(
               ".clientValue-plotly_alt_click-" + x.source,
-              JSON.stringify(eventDataWithKeyALT(d))
+              //JSON.stringify(eventDataWithKeyALT(d))
+              JSON.stringify(eventDataWithKey(d))
             );
             
           }
@@ -303,6 +302,8 @@ HTMLWidgets.widget({
       
       
       graphDiv.on('plotly_restyle', function(d) {
+        console.log("plotly_restyle");
+        
         Shiny.onInputChange(
           ".clientValue-plotly_restyle-" + x.source, 
           JSON.stringify(d)
@@ -373,7 +374,6 @@ HTMLWidgets.widget({
       // 'plotly_deselect' is code for doubleclick when in select mode
       graphDiv.on('plotly_deselect', function(eventData) {
         graphDiv._shiny_plotly_click = undefined;
-        graphDiv._shiny_plotly_selected = undefined;
         Shiny.setInputValue(".clientValue-plotly_selected-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_selecting-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_brush-" + x.source, null);
@@ -398,6 +398,8 @@ HTMLWidgets.widget({
     //   set2: {value: [key3, key4, ...], _isSimpleKey: false}
     // }
     function pointsToKeys(points) {
+      console.log("pointsToKeys points"); console.log(points);
+      
       var keysBySet = {};
       for (var i = 0; i < points.length; i++) {
         
@@ -448,6 +450,8 @@ HTMLWidgets.widget({
     //console.log("x"); console.log(x);
     
     // Gather all *unique* sets.
+    console.log("x.data.length"); console.log(x.data.length);
+
     var allSets = [];
     for (var curveIdx = 0; curveIdx < x.data.length; curveIdx++) {
       var newSet = x.data[curveIdx].set;
@@ -457,6 +461,8 @@ HTMLWidgets.widget({
         }
       }
     }
+
+    console.log("allSets"); console.log(allSets);
 
     // register event listeners for all sets
     for (var i = 0; i < allSets.length; i++) {

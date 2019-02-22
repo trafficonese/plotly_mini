@@ -29,8 +29,12 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
+  dfn_rv <- reactiveVal(NULL)
+  
   output$plot <- renderPlotly({
     key <- highlight_key(dfN)
+    dfn_rv(dfN)
+    
     p <- ggplot() +
       geom_col(data = key, aes(x = plotly:::to_milliseconds(time_stamp), 
                                y = val, 
@@ -53,6 +57,23 @@ server <- function(input, output, session) {
   })
   output$alt_clicked <- renderPrint({
     s <- event_data("plotly_alt_click", source = "Src")
+    req(s)
+
+    range_sel <- sort(as.numeric(range(s$key)))
+    seq_fromto <- range_sel[1] : range_sel[2]
+
+    # plotlyProxy("plot", session) %>%
+      # plotlyProxyInvoke("restyle", list(opacity = 1), as.matrix(seq_fromto))
+      # plotlyProxyInvoke("restyle", list(opacity = 1)
+      # plotlyProxyInvoke("update", list(opacity = 1, marker.color = "purple")
+                        # ,list(seq_fromto)
+      # )
+  
+    # marker.color = "purple"
+    
+    
+    data_key = dfn_rv()[seq_fromto, ]
+    print(data_key)
     s
   })
   output$selection <- renderPrint({
