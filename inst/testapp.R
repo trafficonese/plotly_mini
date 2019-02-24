@@ -70,6 +70,8 @@ server <- function(input, output, session) {
       # )
   
     # marker.color = "purple"
+    plotlyProxy("plot", session) %>%
+      plotlyProxyInvoke("restyle", list(opacity = 1, selectedpoints = seq_fromto))
     
     
     data_key = dfn_rv()[seq_fromto, ]

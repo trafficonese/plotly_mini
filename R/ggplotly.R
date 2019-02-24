@@ -67,7 +67,7 @@
 ggplotly <- function(p = ggplot2::last_plot(), width = NULL, height = NULL,
                      tooltip = "all", dynamicTicks = FALSE, 
                      layerData = 1, originalData = TRUE, source = "A", ...) {
-  # print("ggplotly.R  - ggplotly")
+  print("ggplotly.R  - ggplotly")
   
   UseMethod("ggplotly", p)
 }
@@ -122,18 +122,11 @@ get_domains <- function(nplots = 1, nrows = 1, margins = 0.01,
 }
 
 
-list2df <- function(x, nms) {
-  #stopifnot(length(unique(sapply(x, length))) == 1)
-  m <- if (length(x) == 1) t(x[[1]]) else Reduce(rbind, x)
-  row.names(m) <- NULL
-  df <- data.frame(m)
-  if (!missing(nms)) setNames(df, nms) else df
-}
 
 
 #' @export
 ggplotly.NULL <- function(...) {
-  # print("ggplotly.R  - ggplotly.NULL")
+  print("ggplotly.R  - ggplotly.NULL")
   
   htmltools::browsable(htmltools::div(...))
 }
@@ -142,7 +135,7 @@ ggplotly.NULL <- function(...) {
 ggplotly.plotly <- function(p = ggplot2::last_plot(), width = NULL, height = NULL,
                             tooltip = "all", dynamicTicks = FALSE, 
                             layerData = 1, originalData = TRUE, source = "A", ...) {
-  # print("ggplotly.R  - ggplotly.plotly")
+  print("ggplotly.R  - ggplotly.plotly")
   
   p
 }
@@ -152,7 +145,7 @@ ggplotly.ggmatrix <- function(p = ggplot2::last_plot(), width = NULL,
                               height = NULL, tooltip = "all", dynamicTicks = FALSE, 
                               layerData = 1, originalData = TRUE, source = "A", ...) {
   
-  # print("ggplotly.R  - ggplotly.ggmatrix ")
+  print("ggplotly.R  - ggplotly.ggmatrix ")
   
   dots <- list(...)
   # provide a sensible crosstalk if none is already provided (makes ggnostic() work at least)
@@ -212,7 +205,7 @@ ggplotly.ggmatrix <- function(p = ggplot2::last_plot(), width = NULL,
 ggplotly.ggplot <- function(p = ggplot2::last_plot(), width = NULL,
                             height = NULL, tooltip = "all", dynamicTicks = FALSE,  
                             layerData = 1, originalData = TRUE, source = "A", ...) {
-  # print("ggplotly.R  - ggplotly.ggplot")
+  print("ggplotly.R  - ggplotly.ggplot")
   
   l <- gg2list(p, width = width, height = height, tooltip = tooltip, 
                dynamicTicks = dynamicTicks, layerData = layerData, 
@@ -244,7 +237,7 @@ gg2list <- function(p, width = NULL, height = NULL,
                     layerData = 1, originalData = TRUE, source = "A", ...) {
   
   
-  # print("ggplotly.R  - gg2list")
+  print("ggplotly.R  - gg2list")
   # To convert relative sizes correctly, we use grid::convertHeight(),
   # which requires a known output (device) size.
   dev_fun <- if (system.file(package = "Cairo") != "") {
@@ -1141,6 +1134,15 @@ gg2list <- function(p, width = NULL, height = NULL,
 #-----------------------------------------------------------------------------
 # ggplotly 'utility' functions
 #-----------------------------------------------------------------------------
+
+list2df <- function(x, nms) {
+  #stopifnot(length(unique(sapply(x, length))) == 1)
+  m <- if (length(x) == 1) t(x[[1]]) else Reduce(rbind, x)
+  row.names(m) <- NULL
+  df <- data.frame(m)
+  if (!missing(nms)) setNames(df, nms) else df
+}
+
 
 # convert ggplot2 sizes and grid unit(s) to pixels or normalized point coordinates
 unitConvert <- function(u, to = c("npc", "pixels"), type = c("x", "y", "height", "width")) {

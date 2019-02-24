@@ -248,7 +248,7 @@ HTMLWidgets.widget({
         if (b != "Zoom") {
           console.log("Zoom mode not selected. Change it back.");
           //$("a[data-title='Zoom']")[0].click();
-          Plotly.relayout(graphDiv, 'dragmode', 'zoom')
+          Plotly.relayout(graphDiv, 'dragmode', 'zoom');
         }
         
         
