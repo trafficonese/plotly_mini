@@ -97,7 +97,7 @@ plot_ly <- function(data = data.frame(), ..., type = NULL, name,
                     symbol, symbols = NULL, 
                     linetype, linetypes = NULL,
                     split, frame, 
-                    selectedpoints,
+                    # selectedpoints = NULL,
                     width = NULL, height = NULL, source = "A") {
   
   if (!is.data.frame(data) && !crosstalk::is.SharedData(data)) {
@@ -135,6 +135,7 @@ plot_ly <- function(data = data.frame(), ..., type = NULL, name,
   attrs$linetype <- if (!missing(linetype)) linetype
   attrs$split <- if (!missing(split)) split
   attrs$frame <- if (!missing(frame)) frame
+  # attrs$selectedpoints <- if (!missing(selectedpoints)) selectedpoints
   
   # tack on scale ranges
   attrs$colors <- colors
@@ -145,7 +146,7 @@ plot_ly <- function(data = data.frame(), ..., type = NULL, name,
   attrs$spans <- spans
   attrs$symbols <- symbols
   attrs$linetypes <- linetypes
-  attrs$selectedpoints <- selectedpoints
+
   
   # and, of course, the trace type
   attrs$type <- type

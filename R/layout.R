@@ -116,7 +116,6 @@ config <- function(p, ..., locale = NULL) {
   p$x$config <- modify_list(p$x$config, list(...))
   
   # nms <- sapply(p$x$config[["modeBarButtonsToAdd"]], "[[", "name")
-
   # p$x$config[["modeBarButtonsToAdd"]][nms %in% sharingButton()[["name"]]] <- NULL
 
   p$x$config$cloud <- FALSE

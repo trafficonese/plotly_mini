@@ -2,6 +2,7 @@ library(shiny)
 library(ggplot2)
 library(plotly)
 
+## DATA ###############
 dfN <- data.frame(
   time_stamp = seq.Date(as.Date("2018-04-01"), as.Date("2018-07-30"), 1),
   val = runif(121, 100,1000),
@@ -15,8 +16,9 @@ any(duplicated(dfN$time_stamp))
 dfN[55, ]$col <- "orange"
 dfN[69, ]$col <- "orange"
 # dfN <- dfN[order(as.numeric(dfN$time_stamp)), ]
+###############
 
-ui <- fluidPage(
+ui <- {fluidPage(
   plotlyOutput("plot"),
   h4("click events"),
   verbatimTextOutput("clicked"),
@@ -26,7 +28,7 @@ ui <- fluidPage(
   verbatimTextOutput("alt_clicked"),
   h4("selection events"),
   verbatimTextOutput("selection")
-)
+)}
 
 server <- function(input, output, session) {
   dfn_rv <- reactiveVal(NULL)
@@ -38,10 +40,21 @@ server <- function(input, output, session) {
     p <- ggplot() +
       geom_col(data = key, aes(x = plotly:::to_milliseconds(time_stamp), 
                                y = val, 
-                               fill = I(col)))
+                               text=paste0("Zeitstempel: ", format(time_stamp, format="%d %b %Y - %H:%M:%OS"), "<br>",
+                                           "Gütekriterium: ", val),
+                               fill = I(col))) +
+      theme_minimal() +
+      theme(text = element_text(size=10L), legend.position="none", axis.text.x = element_text(angle=0L, hjust=1L))
     
     ggplotly(p, source = "Src") %>% 
-      layout(xaxis = list(tickval = NULL, ticktext = NULL, type = "date")) %>% 
+      layout(dragmode = "select", autosize = TRUE, selectdirection = "h",
+             xaxis = list(tickval = NULL, ticktext = NULL, type = "date")) %>% 
+      plotly::config(displayModeBar = TRUE, collaborate = FALSE, cloud = FALSE, locale = 'de-CH',
+                     scrollZoom = TRUE, sendData = TRUE, displayModeBar = TRUE, displaylogo = FALSE,
+                     topojsonURL = NULL, logging = 2, responsive = TRUE) %>%
+      style(hoverinfo = "text"
+            # , selectedpoints = c(0,1)
+            ) %>%
       highlight(off = "plotly_doubleclick", on = "plotly_click", #color = "blue",
                 opacityDim = 0.3, selected = attrs_selected(opacity = 1))
   })
@@ -64,14 +77,19 @@ server <- function(input, output, session) {
 
     # plotlyProxy("plot", session) %>%
       # plotlyProxyInvoke("restyle", list(opacity = 1), as.matrix(seq_fromto))
-      # plotlyProxyInvoke("restyle", list(opacity = 1)
       # plotlyProxyInvoke("update", list(opacity = 1, marker.color = "purple")
                         # ,list(seq_fromto)
       # )
   
     # marker.color = "purple"
-    plotlyProxy("plot", session) %>%
-      plotlyProxyInvoke("restyle", list(opacity = 1, selectedpoints = seq_fromto))
+    
+    # plotlyProxy("plot", session) %>%
+    #   plotlyProxyInvoke("update", list(
+    #     # selected = list(marker = list(color = "red")),
+    #     selected = list(marker = list(color = "red")),
+    #     unselected = list(marker = list(color = "blue"))
+    #     # ,selectedpoints = as.list(seq_fromto)
+    #     ))
     
     
     data_key = dfn_rv()[seq_fromto, ]

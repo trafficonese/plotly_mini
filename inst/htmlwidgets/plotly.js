@@ -57,7 +57,6 @@ HTMLWidgets.widget({
         modebars[i].style.zIndex = 1;
       }
     });
-      
 
     // remove "sendDataToCloud", unless user has specified they want it
     x.config = x.config || {};
@@ -218,6 +217,12 @@ HTMLWidgets.widget({
         
         for (var i = 0; i < attrsToAttach.length; i++) {
           var attr = trace[attrsToAttach[i]];
+          if (Array.isArray(attr)) {
+              // pointNumber can be an array (e.g., heatmaps)
+              // TODO: can pointNumber be 3D?
+              obj[attrsToAttach[i]] = typeof pt.pointNumber === "number" ? 
+              attr[pt.pointNumber] : attr[pt.pointNumber[0]][pt.pointNumber[1]];
+          }
         }
         return obj;
       });
@@ -246,9 +251,8 @@ HTMLWidgets.widget({
         var a = $(".modebar-btn.active")[0];
         var b = a.dataset.title;
         if (b != "Zoom") {
-          //$("a[data-title='Zoom']")[0].click();
-          Plotly.relayout(graphDiv, 'dragmode', 'zoom');
           //console.log("Zoom mode not selected. Change it back.");
+          Plotly.relayout(graphDiv, 'dragmode', 'zoom');
           //$("a[data-title='Zoom']")[0].click();
         }
         
@@ -301,6 +305,7 @@ HTMLWidgets.widget({
       
       graphDiv.on('plotly_restyle', function(d) {
         console.log("plotly_restyle");
+        console.log(d);
         
         Shiny.onInputChange(
           ".clientValue-plotly_restyle-" + x.source, 
@@ -460,21 +465,26 @@ HTMLWidgets.widget({
 
     // register event listeners for all sets
     for (var i = 0; i < allSets.length; i++) {
+      console.log("--------------------------------------------");
+      console.log("------------- START FOR LOOP ---------------------------");
+      
       
       var set = allSets[i];
       var selection = new crosstalk.SelectionHandle(set);
+      console.log("selection"); console.log(selection);
 
       var filter = new crosstalk.FilterHandle(set);
+      console.log("filter"); console.log(filter);
 
       var filterChange = function(e) {
-        //console.log("filterChange fired");
+        console.log("filterChange fired");
         removeBrush(el);
         traceManager.updateFilter(set, e.value);
       };
       filter.on("change", filterChange);
 
       var selectionChange = function(e) {
-        //console.log("selectionChange fired");
+        console.log("selectionChange fired");
         //console.log("e");
         //console.log(e);
         
@@ -529,7 +539,7 @@ HTMLWidgets.widget({
 
       // Set a crosstalk variable selection value, triggering an update
       var turnOn = function(e) {
-        //console.log("turnOn fired");
+        console.log("turnOn fired");
         //console.log("e");
         //console.log(e);
         if (e) {
@@ -548,7 +558,7 @@ HTMLWidgets.widget({
       graphDiv.on(x.highlight.on, turnOn);
 
       graphDiv.on(x.highlight.off, function turnOff(e) {
-        //console.log("turnOff fired");
+        console.log("turnOff fired");
         // remove any visual clues
         removeBrush(el);
         // remove any selection history
@@ -596,6 +606,8 @@ function TraceManager(graphDiv, highlight) {
 
 TraceManager.prototype.updateFilter = function(group, keys) {
 
+  console.log("TraceManager.prototype.updateFilter");
+  
   if (typeof(keys) === "undefined" || keys === null) {
     
     this.gd.data = JSON.parse(JSON.stringify(this.origData));
@@ -632,7 +644,7 @@ TraceManager.prototype.updateFilter = function(group, keys) {
 
 TraceManager.prototype.updateSelection = function(group, keys) {
   
-  //console.log("TraceManager.prototype.updateSelection");
+  console.log("TraceManager.prototype.updateSelection");
   //console.log("group");
   //console.log(group);
   //console.log("keys");
