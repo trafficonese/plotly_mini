@@ -246,8 +246,10 @@ HTMLWidgets.widget({
         var a = $(".modebar-btn.active")[0];
         var b = a.dataset.title;
         if (b != "Zoom") {
+          //$("a[data-title='Zoom']")[0].click();
+          Plotly.relayout(graphDiv, 'dragmode', 'zoom');
           //console.log("Zoom mode not selected. Change it back.");
-          $("a[data-title='Zoom']")[0].click();
+          //$("a[data-title='Zoom']")[0].click();
         }
         
         
@@ -257,7 +259,6 @@ HTMLWidgets.widget({
           if (dAlt.points.length == 1) {
             console.log("FROM: curveNumber " + dAlt.points[0].curveNumber +  " pointNumber " + dAlt.points[0].pointNumber);
             console.log("TO: curveNumber " + d.points[0].curveNumber +  " pointNumber " + d.points[0].pointNumber);
-            
 
             // How to get the points in between?
             var pts = [].concat(dAlt.points, d.points);
@@ -299,6 +300,8 @@ HTMLWidgets.widget({
       
       
       graphDiv.on('plotly_restyle', function(d) {
+        console.log("plotly_restyle");
+        
         Shiny.onInputChange(
           ".clientValue-plotly_restyle-" + x.source, 
           JSON.stringify(d)
@@ -393,6 +396,8 @@ HTMLWidgets.widget({
     //   set2: {value: [key3, key4, ...], _isSimpleKey: false}
     // }
     function pointsToKeys(points) {
+      console.log("pointsToKeys points"); console.log(points);
+      
       var keysBySet = {};
       for (var i = 0; i < points.length; i++) {
         
@@ -439,6 +444,8 @@ HTMLWidgets.widget({
     var traceManager = new TraceManager(graphDiv, x.highlight);
 
     // Gather all *unique* sets.
+    console.log("x.data.length"); console.log(x.data.length);
+
     var allSets = [];
     for (var curveIdx = 0; curveIdx < x.data.length; curveIdx++) {
       var newSet = x.data[curveIdx].set;
@@ -448,6 +455,8 @@ HTMLWidgets.widget({
         }
       }
     }
+
+    console.log("allSets"); console.log(allSets);
 
     // register event listeners for all sets
     for (var i = 0; i < allSets.length; i++) {

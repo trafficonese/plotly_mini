@@ -97,7 +97,7 @@ plot_ly <- function(data = data.frame(), ..., type = NULL, name,
                     symbol, symbols = NULL, 
                     linetype, linetypes = NULL,
                     split, frame, 
-                    # selectedpoints,
+                    selectedpoints,
                     width = NULL, height = NULL, source = "A") {
   
   if (!is.data.frame(data) && !crosstalk::is.SharedData(data)) {
@@ -145,7 +145,7 @@ plot_ly <- function(data = data.frame(), ..., type = NULL, name,
   attrs$spans <- spans
   attrs$symbols <- symbols
   attrs$linetypes <- linetypes
-  # attrs$selectedpoints <- selectedpoints
+  attrs$selectedpoints <- selectedpoints
   
   # and, of course, the trace type
   attrs$type <- type
