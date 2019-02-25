@@ -189,7 +189,7 @@ HTMLWidgets.widget({
       });
     }
     
-        // Attach attributes (e.g., "key", "z") to plotly event data
+    // Attach attributes (e.g., "key", "z") to plotly event data
     function eventDataWithKeyALT(eventData) {
       if (eventData === undefined || !eventData.hasOwnProperty("points")) {
         return null;
@@ -201,21 +201,21 @@ HTMLWidgets.widget({
           x: pt.x,
           y: pt.y
         };
+        console.log(obj);
 
         var gd = document.getElementById(el.id);
         var trace = gd.data[pt.curveNumber];
 
         if (!trace._isSimpleKey) {
-          console.log("is not simple key")
+          console.log("is not simple key");
           var attrsToAttach = ["key"];
         } else {
           // simple keys fire the whole key
-          console.log("is simple key")
+          console.log("is simple key");
           obj.key = trace.key;
           var attrsToAttach = [];
         }
         
-        console.log("attrsToAttach.length " + attrsToAttach.length )
         for (var i = 0; i < attrsToAttach.length; i++) {
           var attr = trace[attrsToAttach[i]];
         }
@@ -246,9 +246,10 @@ HTMLWidgets.widget({
         var a = $(".modebar-btn.active")[0];
         var b = a.dataset.title;
         if (b != "Zoom") {
-          console.log("Zoom mode not selected. Change it back.");
           //$("a[data-title='Zoom']")[0].click();
           Plotly.relayout(graphDiv, 'dragmode', 'zoom');
+          //console.log("Zoom mode not selected. Change it back.");
+          //$("a[data-title='Zoom']")[0].click();
         }
         
         
@@ -258,21 +259,17 @@ HTMLWidgets.widget({
           if (dAlt.points.length == 1) {
             console.log("FROM: curveNumber " + dAlt.points[0].curveNumber +  " pointNumber " + dAlt.points[0].pointNumber);
             console.log("TO: curveNumber " + d.points[0].curveNumber +  " pointNumber " + d.points[0].pointNumber);
-            
-            //console.log("dAlt.points"); console.log(dAlt.points);
-            //console.log("d.points"); console.log(d.points);
-            
+
             // How to get the points in between?
             var pts = [].concat(dAlt.points, d.points);
             
-            //console.log("pts"); console.log(pts);
             
             var d = {points: pts, event: d.event};
             
             Shiny.setInputValue(
               ".clientValue-plotly_alt_click-" + x.source,
-              //JSON.stringify(eventDataWithKeyALT(d))
-              JSON.stringify(eventDataWithKey(d))
+              JSON.stringify(eventDataWithKeyALT(d))
+              //JSON.stringify(eventDataWithKey(d))
             );
             
           }
@@ -290,6 +287,7 @@ HTMLWidgets.widget({
           graphDiv._shiny_plotly_click = d;
           
         } else {
+          // Normal Clicks
         	Shiny.setInputValue(
             ".clientValue-plotly_click-" + x.source,
             JSON.stringify(eventDataWithKey(d))
@@ -441,14 +439,10 @@ HTMLWidgets.widget({
     if (!Array.isArray(x.highlight.color)) {
       x.highlight.color = [x.highlight.color];
     }
-    //console.log("x.highlight.color");
-    //console.log(x.highlight.color);
-    
+
 
     var traceManager = new TraceManager(graphDiv, x.highlight);
 
-    //console.log("x"); console.log(x);
-    
     // Gather all *unique* sets.
     console.log("x.data.length"); console.log(x.data.length);
 
@@ -468,22 +462,17 @@ HTMLWidgets.widget({
     for (var i = 0; i < allSets.length; i++) {
       
       var set = allSets[i];
-      //console.log("sets");
-      //console.log(set);
       var selection = new crosstalk.SelectionHandle(set);
-      //console.log("selection");
-      //console.log(selection);
-      
+
       var filter = new crosstalk.FilterHandle(set);
-      
+
       var filterChange = function(e) {
         //console.log("filterChange fired");
         removeBrush(el);
         traceManager.updateFilter(set, e.value);
       };
       filter.on("change", filterChange);
-      
-      
+
       var selectionChange = function(e) {
         //console.log("selectionChange fired");
         //console.log("e");
@@ -537,7 +526,7 @@ HTMLWidgets.widget({
         //console.log(e.value);
       }
       selection.on("change", selectionChange);
-      
+
       // Set a crosstalk variable selection value, triggering an update
       var turnOn = function(e) {
         //console.log("turnOn fired");
@@ -557,7 +546,7 @@ HTMLWidgets.widget({
         turnOn = debounce(turnOn, x.highlight.debounce);
       }
       graphDiv.on(x.highlight.on, turnOn);
-      
+
       graphDiv.on(x.highlight.off, function turnOff(e) {
         //console.log("turnOff fired");
         // remove any visual clues
@@ -567,45 +556,7 @@ HTMLWidgets.widget({
         // trigger the actual removal of selection traces
         selection.set(null, {sender: el});
       });
-          
-      // register a callback for selectize so that there is bi-directional
-      // communication between the widget and direct manipulation events
-      if (x.selectize) {
-        var selectizeID = Object.keys(x.selectize)[i];
-        var items = x.selectize[selectizeID].items;
-        var first = [{value: "", label: "(All)"}];
-        var opts = {
-          options: first.concat(items),
-          searchField: "label",
-          valueField: "value",
-          labelField: "label",
-          maxItems: 50
-        };
-        var select = $("#" + selectizeID).find("select")[0];
-        var selectize = $(select).selectize(opts)[0].selectize;
-        // NOTE: this callback is triggered when *directly* altering 
-        // dropdown items
-        selectize.on("change", function() {
-          var currentItems = traceManager.groupSelections[set] || [];
-          if (!x.highlight.persistent) {
-            removeBrush(el);
-            for (var i = 0; i < currentItems.length; i++) {
-              selectize.removeItem(currentItems[i], true);
-            }
-          }
-          var newItems = selectize.items.filter(function(idx) { 
-            return currentItems.indexOf(idx) < 0;
-          });
-          if (newItems.length > 0) {
-            traceManager.updateSelection(set, newItems);
-          } else {
-            // Item has been removed...
-            // TODO: this logic won't work for dynamically changing palette 
-            traceManager.updateSelection(set, null);
-            traceManager.updateSelection(set, selectize.items);
-          }
-        });
-      }
+
     } // end of selectionChange
     
   } // end of renderValue

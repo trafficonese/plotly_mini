@@ -20,8 +20,15 @@ plotly_build <- function(p, registerFrames = TRUE) {
   UseMethod("plotly_build")
 }
 
+## Helper functions ####################
 tryFALSE <- function(expr) {
   tryCatch(expr, error = function(e) FALSE)
+}
+# retrieve the alpha of an 'old' color code and apply it to a new color code
+alpha_inherit <- function(new, old) {
+  # should return the alpha in a rgba() code
+  alphas <- as.numeric(col2rgb(rgb2hex(old), alpha = TRUE)["alpha", ] / 255)
+  prefix_class(default(toRGB(new, alphas)), "colorway")
 }
 colorway_retrain <- function(traces, colorway = colorway()) {
   colorway <- rep(colorway, length.out = length(traces))
@@ -31,8 +38,11 @@ colorway_retrain <- function(traces, colorway = colorway()) {
   }
   traces 
 }
-
-
+is_sf <- function(dat) {
+  if (crosstalk::is.SharedData(dat)) dat <- dat$origData()
+  inherits(dat, "sf")
+}
+####################
 
 #' @export
 plotly_build.NULL <- function(...) {
