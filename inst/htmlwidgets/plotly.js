@@ -39,6 +39,7 @@ HTMLWidgets.widget({
       
       // Only relevant if we haven't forced persistent mode at command line
       if (!x.highlight.persistent) {
+        console.log("!x.highlight.persistent -------------------");
         window.onmousemove = persistOnShift;
       }
     }
@@ -67,15 +68,12 @@ HTMLWidgets.widget({
     
     // if no plot exists yet, create one with a particular configuration
     if (!instance.plotly) {
-      
       var plot = Plotly.plot(graphDiv, x);
       instance.plotly = true;
       instance.autosize = x.layout.autosize || true;
       instance.width = x.layout.width;
       instance.height = x.layout.height;
-      
     } else {
-      
       // new x data could contain a new height/width...
       // attach to instance so that resize logic knows about the new size
       instance.width = x.layout.width || instance.width;
@@ -88,11 +86,11 @@ HTMLWidgets.widget({
       // TODO: restore crosstalk selections?
       Plotly.purge(graphDiv);
       // TODO: why is this necessary to get crosstalk working?
-      graphDiv.data = undefined;
-      graphDiv.layout = undefined;
+      //graphDiv.data = undefined;
+      //graphDiv.layout = undefined;
       //var plot = Plotly.plot(graphDiv, x);
+      //var plot = Plotly.newPlot(graphDiv, x);
       var plot = Plotly.react(graphDiv, x);
-      
     }
     
     // Trigger plotly.js calls defined via `plotlyProxy()`
@@ -227,9 +225,11 @@ HTMLWidgets.widget({
         return obj;
       });
     }
-    
+
     // send user input event data to shiny
     if (HTMLWidgets.shinyMode) {
+      Shiny.onInputChange("shiftselect", false);
+      Shiny.onInputChange("resetselection", false);
 
       // https://plot.ly/javascript/zoom-events/
       graphDiv.on('plotly_relayout', function(d) {
@@ -245,29 +245,34 @@ HTMLWidgets.widget({
         );
       });
       graphDiv.on('plotly_click', function(d) {
-        
+
+        //graphDiv._shiny_plotly_click = undefined;
+
         // If selected mode is not Zoom, set it. 
         // (If in selection mode, clicks dont have SHIFT+ALT functionality)
         var a = $(".modebar-btn.active")[0];
         var b = a.dataset.title;
         if (b != "Zoom") {
           //console.log("Zoom mode not selected. Change it back.");
-          Plotly.relayout(graphDiv, 'dragmode', 'zoom');
-          //$("a[data-title='Zoom']")[0].click();
+          //Plotly.relayout(graphDiv, 'dragmode', 'zoom');
         }
-        
+
+        //console.log("d.event"); console.log(d.event);
         
         if (d.event.altKey) {
+          console.log("alt click");
         // Alt Clicks
           var dAlt = graphDiv._shiny_plotly_click || {points: []};
           if (dAlt.points.length == 1) {
             console.log("FROM: curveNumber " + dAlt.points[0].curveNumber +  " pointNumber " + dAlt.points[0].pointNumber);
             console.log("TO: curveNumber " + d.points[0].curveNumber +  " pointNumber " + d.points[0].pointNumber);
+            console.log("dAlt");console.log(dAlt);
+            console.log("d");console.log(d);
 
             // How to get the points in between?
             var pts = [].concat(dAlt.points, d.points);
-            
-            
+
+
             var d = {points: pts, event: d.event};
             
             Shiny.setInputValue(
@@ -280,9 +285,13 @@ HTMLWidgets.widget({
           graphDiv._shiny_plotly_click = d;
           
         } else if (x.highlight.persistentShift) {
+        //} else if (d.event.shiftKey) {
         	// Shift Click
           var dShift = graphDiv._shiny_plotly_click || {points: []};
           var pts = [].concat(dShift.points, d.points);
+          //console.log("Shift Click");
+          //console.log(pts);
+          
           var d = {points: pts, event: d.event};
           Shiny.setInputValue(
             ".clientValue-plotly_click_persist_on_shift-" + x.source,
@@ -291,6 +300,7 @@ HTMLWidgets.widget({
           graphDiv._shiny_plotly_click = d;
           
         } else {
+          //console.log("normal click");
           // Normal Clicks
         	Shiny.setInputValue(
             ".clientValue-plotly_click-" + x.source,
@@ -298,7 +308,6 @@ HTMLWidgets.widget({
           );
           graphDiv._shiny_plotly_click = d;
         }
-        
         //graphDiv._shiny_plotly_click = undefined;
       });
       
@@ -322,10 +331,18 @@ HTMLWidgets.widget({
         
         // This is the final result after plotly_selecting
         // Emit doubleclick to remove clicked elements
-        graphDiv.emit("plotly_doubleclick");
+        //graphDiv.emit("plotly_doubleclick");
         
         // TODO - If in select mode and something is clicked, it should jump into click mode
         // Check if only 1 element is selected and simulate a modebar-clicl?
+        
+        
+        if (x.highlight.persistentShift) {
+          console.log("Shift selection.. how to?");
+          console.log(d);
+          Shiny.onInputChange("shiftselect", true);
+        }
+        
         
         if (d) {
           Shiny.onInputChange(
@@ -340,6 +357,7 @@ HTMLWidgets.widget({
         }
       });
       graphDiv.on('plotly_selecting', function(d) {
+        
         // Is triggered while selecting with lasso/Box select
         if (d) {
           Shiny.onInputChange(
@@ -366,6 +384,8 @@ HTMLWidgets.widget({
       });
       graphDiv.on('plotly_doubleclick', function(eventData) {
         graphDiv._shiny_plotly_click = undefined;
+        Shiny.onInputChange("resetselection", true);
+         
         Shiny.setInputValue(".clientValue-plotly_selected-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_selecting-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_brush-" + x.source, null);
@@ -377,6 +397,9 @@ HTMLWidgets.widget({
       // 'plotly_deselect' is code for doubleclick when in select mode
       graphDiv.on('plotly_deselect', function(eventData) {
         graphDiv._shiny_plotly_click = undefined;
+        Shiny.onInputChange("resetselection", true);
+        
+        
         Shiny.setInputValue(".clientValue-plotly_selected-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_selecting-" + x.source, null);
         Shiny.setInputValue(".clientValue-plotly_brush-" + x.source, null);
@@ -449,7 +472,7 @@ HTMLWidgets.widget({
     var traceManager = new TraceManager(graphDiv, x.highlight);
 
     // Gather all *unique* sets.
-    console.log("x.data.length"); console.log(x.data.length);
+    //console.log("x.data.length"); console.log(x.data.length);
 
     var allSets = [];
     for (var curveIdx = 0; curveIdx < x.data.length; curveIdx++) {
@@ -461,7 +484,7 @@ HTMLWidgets.widget({
       }
     }
 
-    console.log("allSets"); console.log(allSets);
+    //console.log("allSets"); console.log(allSets);
 
     // register event listeners for all sets
     for (var i = 0; i < allSets.length; i++) {
@@ -471,10 +494,10 @@ HTMLWidgets.widget({
       
       var set = allSets[i];
       var selection = new crosstalk.SelectionHandle(set);
-      console.log("selection"); console.log(selection);
+      //console.log("selection"); console.log(selection);
 
       var filter = new crosstalk.FilterHandle(set);
-      console.log("filter"); console.log(filter);
+      //console.log("filter"); console.log(filter);
 
       var filterChange = function(e) {
         console.log("filterChange fired");
@@ -524,6 +547,7 @@ HTMLWidgets.widget({
         if (!x.highlight.persistent) {
           selectionHistory = [event];
         } else {
+          console.log("selectionHistory.push(event)");
           selectionHistory.push(event);
         }
         crosstalk.var("plotlySelectionHistory").set(selectionHistory);
@@ -606,7 +630,7 @@ function TraceManager(graphDiv, highlight) {
 
 TraceManager.prototype.updateFilter = function(group, keys) {
 
-  console.log("TraceManager.prototype.updateFilter");
+  //console.log("TraceManager.prototype.updateFilter");
   
   if (typeof(keys) === "undefined" || keys === null) {
     
@@ -644,20 +668,12 @@ TraceManager.prototype.updateFilter = function(group, keys) {
 
 TraceManager.prototype.updateSelection = function(group, keys) {
   
-  console.log("TraceManager.prototype.updateSelection");
-  //console.log("group");
-  //console.log(group);
-  //console.log("keys");
-  //console.log(keys);
-  //console.log(keys !== null);
-  //console.log(!Array.isArray(keys));
-  
-  
+  //console.log("TraceManager.prototype.updateSelection");
+
   if (keys !== null && !Array.isArray(keys)) {
     throw new Error("Invalid keys argument; null or array expected");
   }
-  
-  
+
   // if selection has been cleared, or if this is transient
   // selection, delete the "selection traces"
   var nNewTraces = this.gd.data.length - this.origData.length;
@@ -668,8 +684,7 @@ TraceManager.prototype.updateSelection = function(group, keys) {
       //console.log(i);
       tracesToRemove.push(i);
     }
-    //console.log("tracesToRemove");
-    //console.log(tracesToRemove);
+    console.log("tracesToRemove"); console.log(tracesToRemove);
     
     Plotly.deleteTraces(this.gd, tracesToRemove);
     this.groupSelections[group] = keys;
@@ -687,9 +702,13 @@ TraceManager.prototype.updateSelection = function(group, keys) {
   
   if (keys === null) {
     
+    console.log("keys === null")
+    
     Plotly.restyle(this.gd, {"opacity": this.origOpacity});
     
   } else if (keys.length >= 1) {
+    
+    //console.log("keys.length >= 1")
     
     // placeholder for new "selection traces"
     var traces = [];
@@ -848,9 +867,9 @@ TraceManager.prototype.updateSelection = function(group, keys) {
       }
       
       if (tracesToDim.length > 0) {
-        Plotly.restyle(this.gd, {"opacity": opacities}, tracesToDim);
+        //Plotly.restyle(this.gd, {"opacity": opacities}, tracesToDim);
         // turn off the selected/unselected API
-        Plotly.restyle(this.gd, {"selectedpoints": null});
+        //Plotly.restyle(this.gd, {"selectedpoints": null});
       }
       
     }

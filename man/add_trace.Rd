@@ -5,6 +5,7 @@
 \alias{add_markers}
 \alias{add_text}
 \alias{add_bars}
+\alias{add_ribbons}
 \title{Add trace(s) to a plotly visualization}
 \usage{
 add_trace(p, ..., data = NULL, inherit = TRUE)
@@ -16,6 +17,9 @@ add_text(p, x = NULL, y = NULL, z = NULL, text = NULL, ...,
   data = NULL, inherit = TRUE)
 
 add_bars(p, x = NULL, y = NULL, ..., data = NULL, inherit = TRUE)
+
+add_ribbons(p, x = NULL, ymin = NULL, ymax = NULL, ...,
+  data = NULL, inherit = TRUE)
 }
 \arguments{
 \item{p}{a plotly object}

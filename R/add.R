@@ -169,6 +169,25 @@ add_bars <- function(p, x = NULL, y = NULL, ...,
   )
 }
 
+#' @inheritParams add_trace
+#' @rdname add_trace
+#' @export
+add_ribbons <- function(p, x = NULL, ymin = NULL, ymax = NULL, ...,
+                        data = NULL, inherit = TRUE) {
+  if (inherit) {
+    x <- x %||% p$x$attrs[[1]][["x"]]
+    ymin <- ymin %||% p$x$attrs[[1]][["ymin"]]
+    ymax <- ymax %||% p$x$attrs[[1]][["ymax"]]
+  }
+  if (is.null(x) || is.null(ymin) || is.null(ymax)) {
+    stop("Must supply `x`/`ymin`/`ymax` attributes", call. = FALSE)
+  }
+  add_trace_classed(
+    p, class = c("plotly_ribbon", "plotly_polygon"), 
+    x = x, ymin = ymin, ymax = ymax, type = "scatter", mode = "lines",
+    hoveron = "points", fill = "toself",  ..., data = data, inherit = inherit
+  )
+}
 
 
 # attach a class to a trace which informs data processing in plotly_build
