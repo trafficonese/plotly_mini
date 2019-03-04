@@ -39,7 +39,7 @@ HTMLWidgets.widget({
       
       // Only relevant if we haven't forced persistent mode at command line
       if (!x.highlight.persistent) {
-        console.log("!x.highlight.persistent -------------------");
+        //console.log("!x.highlight.persistent -------------------");
         window.onmousemove = persistOnShift;
       }
     }
@@ -115,10 +115,10 @@ HTMLWidgets.widget({
           }
           var args = [gd].concat(msg.args);
           
-          console.log("msg.method");
-          console.log(msg.method);
-          console.log("Plotly args:");
-          console.log(args);
+          //console.log("msg.method");
+          //console.log(msg.method);
+          //console.log("Plotly args:");
+          //console.log(args);
           
           //console.log("msg.id");
           //console.log(msg.id);
@@ -185,46 +185,6 @@ HTMLWidgets.widget({
         return obj;
       });
     }
-    
-    // Attach attributes (e.g., "key", "z") to plotly event data
-    function eventDataWithKeyALT(eventData) {
-      if (eventData === undefined || !eventData.hasOwnProperty("points")) {
-        return null;
-      }
-      return eventData.points.map(function(pt) {
-        var obj = {
-          curveNumber: pt.curveNumber, 
-          pointNumber: pt.pointNumber, 
-          x: pt.x,
-          y: pt.y
-        };
-        console.log(obj);
-
-        var gd = document.getElementById(el.id);
-        var trace = gd.data[pt.curveNumber];
-
-        if (!trace._isSimpleKey) {
-          console.log("is not simple key");
-          var attrsToAttach = ["key"];
-        } else {
-          // simple keys fire the whole key
-          console.log("is simple key");
-          obj.key = trace.key;
-          var attrsToAttach = [];
-        }
-        
-        for (var i = 0; i < attrsToAttach.length; i++) {
-          var attr = trace[attrsToAttach[i]];
-          if (Array.isArray(attr)) {
-              // pointNumber can be an array (e.g., heatmaps)
-              // TODO: can pointNumber be 3D?
-              obj[attrsToAttach[i]] = typeof pt.pointNumber === "number" ? 
-              attr[pt.pointNumber] : attr[pt.pointNumber[0]][pt.pointNumber[1]];
-          }
-        }
-        return obj;
-      });
-    }
 
     // send user input event data to shiny
     if (HTMLWidgets.shinyMode) {
@@ -246,41 +206,35 @@ HTMLWidgets.widget({
       });
       graphDiv.on('plotly_click', function(d) {
 
-        //graphDiv._shiny_plotly_click = undefined;
-
         // If selected mode is not Zoom, set it. 
         // (If in selection mode, clicks dont have SHIFT+ALT functionality)
+        /*
         var a = $(".modebar-btn.active")[0];
         var b = a.dataset.title;
         if (b != "Zoom") {
-          //console.log("Zoom mode not selected. Change it back.");
-          //Plotly.relayout(graphDiv, 'dragmode', 'zoom');
+          console.log("Zoom mode not selected. Change it back.");
+          Plotly.relayout(graphDiv, 'dragmode', 'zoom');
         }
+        */
 
+        //console.log("d"); console.log(d);
         //console.log("d.event"); console.log(d.event);
+        //console.log("d.event.buttons"); console.log(d.event.buttons);
         
         if (d.event.altKey) {
-          console.log("alt click");
-        // Alt Clicks
+          // Alt Clicks
           var dAlt = graphDiv._shiny_plotly_click || {points: []};
           if (dAlt.points.length == 1) {
-            console.log("FROM: curveNumber " + dAlt.points[0].curveNumber +  " pointNumber " + dAlt.points[0].pointNumber);
-            console.log("TO: curveNumber " + d.points[0].curveNumber +  " pointNumber " + d.points[0].pointNumber);
-            console.log("dAlt");console.log(dAlt);
-            console.log("d");console.log(d);
 
             // How to get the points in between?
             var pts = [].concat(dAlt.points, d.points);
-
 
             var d = {points: pts, event: d.event};
             
             Shiny.setInputValue(
               ".clientValue-plotly_alt_click-" + x.source,
-              JSON.stringify(eventDataWithKeyALT(d))
-              //JSON.stringify(eventDataWithKey(d))
+              JSON.stringify(eventDataWithKey(d))
             );
-            
           }
           graphDiv._shiny_plotly_click = d;
           
@@ -289,9 +243,6 @@ HTMLWidgets.widget({
         	// Shift Click
           var dShift = graphDiv._shiny_plotly_click || {points: []};
           var pts = [].concat(dShift.points, d.points);
-          //console.log("Shift Click");
-          //console.log(pts);
-          
           var d = {points: pts, event: d.event};
           Shiny.setInputValue(
             ".clientValue-plotly_click_persist_on_shift-" + x.source,
@@ -300,13 +251,15 @@ HTMLWidgets.widget({
           graphDiv._shiny_plotly_click = d;
           
         } else {
-          //console.log("normal click");
-          // Normal Clicks
-        	Shiny.setInputValue(
-            ".clientValue-plotly_click-" + x.source,
-            JSON.stringify(eventDataWithKey(d))
-          );
-          graphDiv._shiny_plotly_click = d;
+          //if right click, do nothing, otherwise normal click event
+          if (d.event.buttons == 1) {
+            // Normal Clicks
+          	Shiny.setInputValue(
+              ".clientValue-plotly_click-" + x.source,
+              JSON.stringify(eventDataWithKey(d))
+            );
+            graphDiv._shiny_plotly_click = d;            
+          }
         }
         //graphDiv._shiny_plotly_click = undefined;
       });
@@ -338,8 +291,8 @@ HTMLWidgets.widget({
         
         
         if (x.highlight.persistentShift) {
-          console.log("Shift selection.. how to?");
-          console.log(d);
+          //console.log("Shift selection.. how to?");
+          //console.log(d);
           Shiny.onInputChange("shiftselect", true);
         }
         
@@ -424,7 +377,7 @@ HTMLWidgets.widget({
     //   set2: {value: [key3, key4, ...], _isSimpleKey: false}
     // }
     function pointsToKeys(points) {
-      console.log("pointsToKeys points"); console.log(points);
+      //console.log("pointsToKeys points"); console.log(points);
       
       var keysBySet = {};
       for (var i = 0; i < points.length; i++) {
@@ -488,8 +441,8 @@ HTMLWidgets.widget({
 
     // register event listeners for all sets
     for (var i = 0; i < allSets.length; i++) {
-      console.log("--------------------------------------------");
-      console.log("------------- START FOR LOOP ---------------------------");
+      //console.log("--------------------------------------------");
+      //console.log("------------- START FOR LOOP ---------------------------");
       
       
       var set = allSets[i];
@@ -500,14 +453,14 @@ HTMLWidgets.widget({
       //console.log("filter"); console.log(filter);
 
       var filterChange = function(e) {
-        console.log("filterChange fired");
+        //console.log("filterChange fired");
         removeBrush(el);
         traceManager.updateFilter(set, e.value);
       };
       filter.on("change", filterChange);
 
       var selectionChange = function(e) {
-        console.log("selectionChange fired");
+        //console.log("selectionChange fired");
         //console.log("e");
         //console.log(e);
         
@@ -547,7 +500,7 @@ HTMLWidgets.widget({
         if (!x.highlight.persistent) {
           selectionHistory = [event];
         } else {
-          console.log("selectionHistory.push(event)");
+          //console.log("selectionHistory.push(event)");
           selectionHistory.push(event);
         }
         crosstalk.var("plotlySelectionHistory").set(selectionHistory);
@@ -563,7 +516,7 @@ HTMLWidgets.widget({
 
       // Set a crosstalk variable selection value, triggering an update
       var turnOn = function(e) {
-        console.log("turnOn fired");
+        //console.log("turnOn fired");
         //console.log("e");
         //console.log(e);
         if (e) {
@@ -582,7 +535,7 @@ HTMLWidgets.widget({
       graphDiv.on(x.highlight.on, turnOn);
 
       graphDiv.on(x.highlight.off, function turnOff(e) {
-        console.log("turnOff fired");
+        //console.log("turnOff fired");
         // remove any visual clues
         removeBrush(el);
         // remove any selection history
@@ -684,7 +637,7 @@ TraceManager.prototype.updateSelection = function(group, keys) {
       //console.log(i);
       tracesToRemove.push(i);
     }
-    console.log("tracesToRemove"); console.log(tracesToRemove);
+    //console.log("tracesToRemove"); console.log(tracesToRemove);
     
     Plotly.deleteTraces(this.gd, tracesToRemove);
     this.groupSelections[group] = keys;
