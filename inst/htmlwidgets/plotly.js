@@ -266,9 +266,7 @@ HTMLWidgets.widget({
       
       
       graphDiv.on('plotly_restyle', function(d) {
-        console.log("plotly_restyle");
-        console.log(d);
-        
+        //console.log("plotly_restyle"); console.log(d);
         Shiny.onInputChange(
           ".clientValue-plotly_restyle-" + x.source, 
           JSON.stringify(d)
@@ -655,7 +653,7 @@ TraceManager.prototype.updateSelection = function(group, keys) {
   
   if (keys === null) {
     
-    console.log("keys === null")
+    //console.log("keys === null")
     
     Plotly.restyle(this.gd, {"opacity": this.origOpacity});
     
@@ -864,7 +862,7 @@ function findMatches(haystack, needleSet) {
 
 // find matches for "simple" keys
 function findSimpleMatches(haystack, needleSet) {
-  console.log("findSimpleMatches");
+  //console.log("findSimpleMatches");
   var match = haystack.every(function(val) {
     return val === null || needleSet.indexOf(val) >= 0;
   });
