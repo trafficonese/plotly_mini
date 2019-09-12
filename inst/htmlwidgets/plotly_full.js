@@ -167,9 +167,20 @@ HTMLWidgets.widget({
         );
       });
       graphDiv.on('plotly_click', function(d) {
+        
+        //if (d.event.altKey) {
+        if (d.event.ctrlKey) {
+          // STRG Clicks
+          var dShift = graphDiv._shiny_plotly_click || {points: []};
+          var pts = [].concat(dShift.points, d.points);
+          var d = {points: pts, event: d.event};
+          Shiny.setInputValue(
+            ".clientValue-plotly_click_persist_on_shift-" + x.source,
+            JSON.stringify(eventDataWithKey(d))
+          );
+          graphDiv._shiny_plotly_click = d;
 
-        if (d.event.altKey) {
-          // Alt Clicks
+        } else if (x.highlight.persistentShift) {
           var dAlt = graphDiv._shiny_plotly_click || {points: []};
           if (dAlt.points.length == 1) {
             var pts = [].concat(dAlt.points, d.points);
@@ -180,17 +191,7 @@ HTMLWidgets.widget({
             );
           }
           graphDiv._shiny_plotly_click = d;
-
-        } else if (x.highlight.persistentShift) {
-          var dShift = graphDiv._shiny_plotly_click || {points: []};
-          var pts = [].concat(dShift.points, d.points);
-          var d = {points: pts, event: d.event};
-          Shiny.setInputValue(
-            ".clientValue-plotly_click_persist_on_shift-" + x.source,
-            JSON.stringify(eventDataWithKey(d))
-          );
-          graphDiv._shiny_plotly_click = d;
-
+          
         } else {
           //if right click, do nothing, otherwise normal click event
           if (d.event.buttons == 1) {
